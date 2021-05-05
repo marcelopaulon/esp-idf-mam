@@ -73,6 +73,8 @@ size_t bt_mesh_rx_appkey_size(void);
 
 struct bt_mesh_app_key *bt_mesh_rx_appkey_get(size_t index);
 
+int get_opcode(struct net_buf_simple *buf, uint32_t *opcode);
+
 #ifdef __cplusplus
 }
 #endif

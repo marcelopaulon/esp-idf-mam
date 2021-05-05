@@ -90,3 +90,9 @@
 [submodule "components/cmock/CMock"]
 	path = components/cmock/CMock
 	url = ../../ThrowTheSwitch/CMock.git
+[submodule "ble_mesh_wifi_coexist/components/tarablessd1306"]
+	path = ble_mesh_wifi_coexist/components/tarablessd1306
+	url = https://github.com/TaraHoleInIt/tarablessd1306
+[submodule "ble_mesh_wifi_coexist/components/u8g2"]
+	path = ble_mesh_wifi_coexist/components/u8g2
+	url = https://github.com/olikraus/u8g2

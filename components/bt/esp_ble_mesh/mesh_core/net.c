@@ -27,6 +27,12 @@
 #include "proxy_server.h"
 #include "provisioner_main.h"
 
+// Required for timer:
+#include "esp_timer.h"
+
+// Required for opcode check:
+#include "esp_ble_mesh_defs.h"
+
 /* Minimum valid Mesh Network PDU length. The Network headers
  * themselves take up 9 bytes. After that there is a minumum of 1 byte
  * payload for both CTL=1 and CTL=0 PDUs (smallest OpCode is 1 byte). CTL=1
@@ -58,6 +64,17 @@
 #if FRIEND_CRED_COUNT > 0
 static struct friend_cred friend_cred[FRIEND_CRED_COUNT];
 #endif
+
+// MAM config
+bool mamRelay = false;
+int delta_ms = 100;
+// MAM state
+
+int bestHops = -1;
+uint16_t bestNodeAddress;
+int64_t expiry_us = 0;
+
+// end MAM state
 
 static struct {
     uint32_t src:15, /* MSB of source address is always 0 */
@@ -1269,7 +1286,63 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     priv = rx->sub->keys[rx->sub->kr_flag].privacy;
     nid = rx->sub->keys[rx->sub->kr_flag].nid;
 
-    BT_DBG("Relaying packet. TTL is now %u", TTL(buf->data));
+    BT_WARN("Relaying packet. TTL is now %u. ", TTL(buf->data));
+
+    for (int i = 0; i < buf->size; i++) {
+        BT_WARN("Byte %d = 0x%04x ", i, buf->data[i]);
+    }
+
+    uint8_t messageHops = rx->ctx.recv_ttl;
+
+    uint32_t opcode;
+    struct net_buf_simple tempbuf;
+    tempbuf.data = &buf->data[4];
+    tempbuf.size = buf->size;
+    tempbuf.len = buf->len - 4;
+    tempbuf.__buf = &buf->data[4];
+
+    get_opcode(((struct net_buf_simple*) &tempbuf), &opcode);
+
+    if (opcode == ESP_BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET) {
+        BT_WARN("Switching MAM relay type and not relaying further");
+        mamRelay = !mamRelay;
+        return;
+    }
+    else if (opcode == ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET) { // if isDiscoveryMessage(sbuf) // Send DISCOVERY packet
+        BT_WARN("MAM Discovery Packet");
+        int64_t now = esp_timer_get_time(); // microseconds
+        bool expired = now > expiry_us;
+        if (expired == true || messageHops < bestHops) {
+            bestNodeAddress = rx->ctx.addr;
+            bestHops = messageHops;
+            expiry_us = now + (delta_ms*1000);
+        }
+
+        // TODO send back sensor data to bestNodeAddress
+
+        return;
+    }
+
+    printf("HA! 0x%04x (expected 0x%04x)", opcode, ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET);
+
+    BT_WARN("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
+
+
+    //[5] = ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET, // Set MAM or BTM-R relay
+    //[6] = ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_STATUS // Send DISCOVERY packet
+    //if (rx->ctx. == ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET) {
+    //    ESP_LOGW(TAG, "Received Set MAM/BTM-R relay message");
+    //}
+    //else if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_STATUS) {
+    //    ESP_LOGW(TAG, "Received DISCOVERY message");        
+    //}
+    //BT_WARN("DUMP: model recv_op=%u", buf->data);
+
+    if (mamRelay) {
+        BT_WARN("delta_ms=%d", delta_ms);
+    }
+
+    BT_WARN("TTL=%u", TTL(buf->data));
 
     /* Update NID if RX or RX was with friend credentials */
     if (rx->friend_cred) {
