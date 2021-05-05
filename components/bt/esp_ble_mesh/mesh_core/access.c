@@ -581,7 +581,7 @@ static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
     return NULL;
 }
 
-static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
+int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 {
     switch (buf->data[0] >> 6) {
     case 0x00:
