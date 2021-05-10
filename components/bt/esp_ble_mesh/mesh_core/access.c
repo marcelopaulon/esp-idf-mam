@@ -653,7 +653,14 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         return;
     }
 
+    printf("OpCode 0x%08x", opcode);
     BT_DBG("OpCode 0x%08x", opcode);
+
+    if (rx->ctx.recv_dst == 65279) {
+        printf("SWITCH MAM RELAY APPLICATION LAYER");
+    } else if (rx->ctx.recv_dst == 65278) {
+        printf("DISCOVERY MESSAGE APPLICATION LAYER");
+    }
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];

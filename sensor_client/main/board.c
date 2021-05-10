@@ -25,7 +25,7 @@ static uint32_t send_opcode[] = {
     [2] = ESP_BLE_MESH_MODEL_OP_SENSOR_SETTINGS_GET,
     [3] = ESP_BLE_MESH_MODEL_OP_SENSOR_GET,
     [4] = ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET,
-    [5] = ESP_BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET, // Set MAM or BTM-R relay
+    [5] = ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET, // Set MAM or BTM-R relay
     [6] = ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET // Send DISCOVERY packet
 };
 static uint8_t press_count;
@@ -34,7 +34,7 @@ static void button_tap_cb(void* arg)
 {
     int idx = press_count++;
 
-    example_ble_mesh_send_sensor_message(send_opcode[idx], 0);
+    example_ble_mesh_send_sensor_message(send_opcode[idx], idx);
     press_count = press_count % ARRAY_SIZE(send_opcode);
 }
 

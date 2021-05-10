@@ -1289,26 +1289,30 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     BT_WARN("Relaying packet. TTL is now %u. ", TTL(buf->data));
 
     for (int i = 0; i < buf->size; i++) {
-        BT_WARN("Byte %d = 0x%04x ", i, buf->data[i]);
+        //BT_WARN("Byte %d = 0x%04x ", i, buf->data[i]);
     }
 
     uint8_t messageHops = rx->ctx.recv_ttl;
 
+    ///// TEST
+
+    printf("PAULON TEST TODAY %d", rx->ctx.recv_dst);
+
+    int err = 0;
+
     uint32_t opcode;
-    struct net_buf_simple tempbuf;
-    tempbuf.data = &buf->data[4];
-    tempbuf.size = buf->size;
-    tempbuf.len = buf->len - 4;
-    tempbuf.__buf = &buf->data[4];
 
-    get_opcode(((struct net_buf_simple*) &tempbuf), &opcode);
+    get_opcode(&buf->b, &opcode);
+    printf("HA! 0x%04x (expected 0x%04x)", opcode, ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET);
 
-    if (opcode == ESP_BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET) {
-        BT_WARN("Switching MAM relay type and not relaying further");
+    /// END TEST
+
+
+    if (rx->ctx.recv_dst == 65279) {
+        BT_WARN("Switching MAM relay type to %s", mamRelay ? "BTM-R" : "MAM");
         mamRelay = !mamRelay;
-        return;
     }
-    else if (opcode == ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET) { // if isDiscoveryMessage(sbuf) // Send DISCOVERY packet
+    else if (rx->ctx.recv_dst == 65278) { // if isDiscoveryMessage(sbuf) // Send DISCOVERY packet
         BT_WARN("MAM Discovery Packet");
         int64_t now = esp_timer_get_time(); // microseconds
         bool expired = now > expiry_us;
@@ -1318,12 +1322,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
             expiry_us = now + (delta_ms*1000);
         }
 
-        // TODO send back sensor data to bestNodeAddress
-
-        return;
+        // TODO the application layer should implement sending data back upon receiving this message
     }
-
-    printf("HA! 0x%04x (expected 0x%04x)", opcode, ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET);
 
     BT_WARN("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
 
@@ -1558,9 +1558,11 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 
     /* Relay if this was a group/virtual address, or if the destination
      * was neither a local element nor an LPN we're Friends for.
+     * MAM: relay if address 65279 or 65278 (reserved as indicators for MAM relay system)
      */
     if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
-            (!rx.local_match && !rx.friend_match)) {
+            (!rx.local_match && !rx.friend_match) ||
+            rx.ctx.recv_dst == 65279 || rx.ctx.recv_dst == 65278) {
         net_buf_simple_restore(&buf, &state);
         bt_mesh_net_relay(&buf, &rx);
     }

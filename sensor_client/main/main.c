@@ -413,7 +413,7 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
     }
 }
 
-void example_ble_mesh_send_sensor_message(uint32_t opcode, int specialProp)
+void example_ble_mesh_send_sensor_message(uint32_t opcode, int idx)
 {
     /*
         static void example_ble_mesh_set_msg_common(esp_ble_mesh_client_common_param_t *common,
@@ -453,17 +453,17 @@ void example_ble_mesh_send_sensor_message(uint32_t opcode, int specialProp)
 
     //[5] = ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET, // Set MAM or BTM-R relay
     //[6] = ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_STATUS // Send DISCOVERY packet
-    if (opcode == ESP_BLE_MESH_MODEL_OP_SENSOR_SETTINGS_GET && specialProp == 25000) {
+    if (idx == 5) {
         ESP_LOGW(TAG, "Sending Set MAM/BTM-R relay message");
         common.opcode = opcode;
         common.ctx.send_ttl = 120;
-        get.settings_get.sensor_property_id = specialProp;
+        common.ctx.addr = 65279; // 0XFF00 - 1
     }
-    else if (opcode == ESP_BLE_MESH_MODEL_OP_SENSOR_SETTINGS_GET && specialProp == 25001) {
+    else if (idx == 6) {
         ESP_LOGW(TAG, "Sending DISCOVERY message");
         common.opcode = opcode;
-        common.ctx.send_ttl = 124;
-        get.settings_get.sensor_property_id = specialProp;
+        common.ctx.send_ttl = 120;
+        common.ctx.addr = 65278; // 0XFF00 - 2
     }
 
     err = esp_ble_mesh_sensor_client_get_state(&common, &get);
