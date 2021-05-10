@@ -657,7 +657,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     BT_DBG("OpCode 0x%08x", opcode);
 
     if (rx->ctx.recv_dst == 65279) {
-        printf("SWITCH MAM RELAY APPLICATION LAYER");
+        printf("SWITCH MAM RELAY APPLICATION LAYER"); // This should never happen
     } else if (rx->ctx.recv_dst == 65278) {
         printf("DISCOVERY MESSAGE APPLICATION LAYER");
     }
