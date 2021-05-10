@@ -737,6 +737,22 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, uint32_t seq, uint8_t hdr,
         return -EINVAL;
     }
 
+    // Discovery packet app handling
+    if (rx->ctx.recv_dst == 65278) {
+        sdu = bt_mesh_alloc_buf(CONFIG_BLE_MESH_RX_SDU_MAX - BLE_MESH_MIC_SHORT);
+        if (!sdu) {
+            BT_ERR("%s, Out of memory", __func__);
+            return -ENOMEM;
+        }
+        net_buf_simple_reset(sdu);
+
+        // Call app layer with empty SDU for Discovery packet
+        bt_mesh_model_recv(rx, sdu);
+
+        bt_mesh_free_buf(sdu);
+        return 0;
+    }
+
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) && !rx->local_match) {
         BT_DBG("Ignoring PDU for LPN 0x%04x of this Friend",
                rx->ctx.recv_dst);
@@ -1078,8 +1094,8 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
     if (rx->ctl) {
         return ctl_recv(rx, hdr, buf, seq_auth);
     } else {
-        /* SDUs must match a local element or an LPN of this Friend. */
-        if (!rx->local_match && !rx->friend_match) {
+        /* SDUs must match a local element or an LPN of this Friend or be a MAM Discovery packet. */
+        if (!rx->local_match && !rx->friend_match && rx->ctx.recv_dst != 65278) {
             return 0;
         }
 
