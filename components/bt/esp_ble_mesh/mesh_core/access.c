@@ -20,6 +20,10 @@
 #include "fast_prov.h"
 #include "provisioner_main.h"
 
+#include "esp_ble_mesh_sensor_model_api.h"
+
+#define TAG "ACCESS-LAYER"
+
 #define BLE_MESH_SDU_MAX_LEN    384
 
 static const struct bt_mesh_comp *dev_comp;
@@ -636,6 +640,37 @@ bool bt_mesh_fixed_group_match(uint16_t addr)
     }
 }
 
+// MAMRELAY
+void relayToMobileHub(struct bt_mesh_model *model,
+                      struct bt_mesh_msg_ctx *ctx,
+                      struct net_buf_simple *buf)
+{
+    esp_ble_mesh_sensor_client_get_state_t get = {0};
+    esp_ble_mesh_client_common_param_t common = {0};
+    esp_ble_mesh_node_t *node = NULL;
+    esp_err_t err = ESP_OK;
+
+    common.opcode = ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET;
+    //common.model = model;
+    //common.ctx.net_idx = prov_key.net_idx;
+    //common.ctx.app_idx = prov_key.app_idx;
+    common.ctx.addr = 65277; // Special address 65277 - Send to Mobile-Hub
+    common.ctx.send_ttl = ctx->recv_ttl - 1;
+    common.ctx.send_rel = false;
+    common.msg_timeout = 0;
+    common.msg_role = 0x00;
+
+    get.series_get.property_id = 0;
+
+    err = esp_ble_mesh_sensor_client_get_state(&common, &get);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to relay to Mobile-Hub (access layer)");
+    }
+    else {
+        ESP_LOGW(TAG, "Sent message tp Mobile-Hub (access layer)");
+    }
+}
+
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
     struct bt_mesh_model *models = NULL, *model = NULL;
@@ -656,10 +691,19 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     printf("OpCode 0x%08x", opcode);
     BT_DBG("OpCode 0x%08x", opcode);
 
+    bool sendToMobileHub = false;
+
     if (rx->ctx.recv_dst == 65279) {
         printf("SWITCH MAM RELAY APPLICATION LAYER"); // This should never happen
     } else if (rx->ctx.recv_dst == 65278) {
         printf("DISCOVERY MESSAGE APPLICATION LAYER");
+    } else if (opcode == 0x8230) {
+        printf("SEND TO MOBILE HUB APPLICATION LAYER");
+        // This message should be relayed to the Mobile-Hub, so, we'll send it to
+        // the net layer with a special address, 65277, that will indicate the net
+        // layer to send the message towards the Mobile-Hub
+        // TODO
+        sendToMobileHub = true;
     }
 
     for (i = 0; i < dev_comp->elem_count; i++) {
@@ -714,6 +758,13 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
          * the message.
          */
         net_buf_simple_save(buf, &state);
+
+        if (sendToMobileHub) {
+            printf("Application layer relay is sending to the net layer towards the Mobile-Hub....");
+            relayToMobileHub(model, &rx->ctx, buf);
+            // TODO esp_ble_mesh_sensor_client_get_state(xxxx, yyy)
+        }
+
         op->func(model, &rx->ctx, buf);
         net_buf_simple_restore(buf, &state);
     }

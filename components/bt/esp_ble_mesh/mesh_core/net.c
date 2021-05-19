@@ -1323,6 +1323,13 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         }
 
         // TODO the application layer should implement sending data back upon receiving this message
+    } else if (rx->ctx.recv_dst == 65277) { // Send to Mobile-Hub.
+        printf("SEND TO MOBILE HUB NET LAYER");
+        if (bestHops == -1) {
+            BT_WARN("Ignoring send to mobile hub message - no mam discovery message received");
+            return;
+        }
+        rx->ctx.recv_dst = bestNodeAddress; // TODO change address in buffer
     }
 
     BT_WARN("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
@@ -1558,11 +1565,11 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 
     /* Relay if this was a group/virtual address, or if the destination
      * was neither a local element nor an LPN we're Friends for.
-     * MAM: relay if address 65279 or 65278 (reserved as indicators for MAM relay system)
+     * MAM: relay if address 65279 or 65278 or 65277 (reserved as indicators for MAM relay system)
      */
     if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
             (!rx.local_match && !rx.friend_match) ||
-            rx.ctx.recv_dst == 65279 || rx.ctx.recv_dst == 65278) {
+            rx.ctx.recv_dst == 65279 || rx.ctx.recv_dst == 65278 || rx.ctx.recv_dst == 65277) {
         net_buf_simple_restore(&buf, &state);
         bt_mesh_net_relay(&buf, &rx);
     }

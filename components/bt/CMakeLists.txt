@@ -372,6 +372,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_common/mesh_timer.c"
                     "esp_ble_mesh/mesh_common/mesh_util.c"
                     "esp_ble_mesh/mesh_core/storage/settings_nvs.c"
+                    "esp_ble_mesh/api/models/esp_ble_mesh_sensor_model_api.c"
                     "esp_ble_mesh/mesh_core/access.c"
                     "esp_ble_mesh/mesh_core/adv.c"
                     "esp_ble_mesh/mesh_core/beacon.c"
