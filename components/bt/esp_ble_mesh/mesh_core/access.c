@@ -641,7 +641,7 @@ bool bt_mesh_fixed_group_match(uint16_t addr)
 }
 
 // MAMRELAY
-void relayToMobileHub(struct bt_mesh_model *model,
+/*void relayToMobileHub(struct bt_mesh_model *model,
                       struct bt_mesh_msg_ctx *ctx,
                       struct net_buf_simple *buf)
 {
@@ -669,7 +669,7 @@ void relayToMobileHub(struct bt_mesh_model *model,
     else {
         ESP_LOGW(TAG, "Sent message tp Mobile-Hub (access layer)");
     }
-}
+}*/
 
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
@@ -760,8 +760,8 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         net_buf_simple_save(buf, &state);
 
         if (sendToMobileHub) {
-            printf("Application layer relay is sending to the net layer towards the Mobile-Hub....");
-            relayToMobileHub(model, &rx->ctx, buf);
+            //printf("Application layer relay is sending to the net layer towards the Mobile-Hub....");
+            //relayToMobileHub(model, &rx->ctx, buf);
             // TODO esp_ble_mesh_sensor_client_get_state(xxxx, yyy)
         }
 
