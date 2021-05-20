@@ -515,11 +515,54 @@ static void example_ble_mesh_send_sensor_series_status(esp_ble_mesh_sensor_serve
     }
 }
 
+void relayToMobileHub(struct esp_ble_mesh_model *model,
+                      int ttl)
+{
+    esp_ble_mesh_sensor_client_get_state_t get = {0};
+    esp_ble_mesh_client_common_param_t common = {0};
+    esp_ble_mesh_node_t *node = NULL;
+    esp_err_t err = ESP_OK;
+
+    common.opcode = ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET;
+    common.model = model;
+    common.ctx.net_idx = prov_key.net_idx;
+    common.ctx.app_idx = prov_key.app_idx;
+    common.ctx.addr = 65277; // Special address 65277 - Send to Mobile-Hub
+    common.ctx.send_ttl = ttl - 1;
+    common.ctx.send_rel = false;
+    common.msg_timeout = 0;
+    common.msg_role = 0x00;
+
+    get.series_get.property_id = 0;
+
+    err = esp_ble_mesh_sensor_client_get_state(&common, &get);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to relay to Mobile-Hub (application layer)");
+    }
+    else {
+        ESP_LOGW(TAG, "Sent message tp Mobile-Hub (application layer)");
+    }
+}
+
 static void example_ble_mesh_sensor_server_cb(esp_ble_mesh_sensor_server_cb_event_t event,
                                               esp_ble_mesh_sensor_server_cb_param_t *param)
 {
     ESP_LOGI(TAG, "Sensor server, event %d, src 0x%04x, dst 0x%04x, model_id 0x%04x",
         event, param->ctx.addr, param->ctx.recv_dst, param->model->model_id);
+
+    if (param->params->ctx.recv_dst == 65278) {
+        // DISCOVERY MESSAGE
+        printf("DISCOVERY MESSAGE RECEIVED. WILL SEND DATA TO MOBILE-HUB");
+        relayToMobileHub(param->params->model, 120); // Send data to mobile-hub
+    }
+    else if (event == ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET) {
+        printf("SEND TO MOBILE HUB APPLICATION LAYER");
+        // This message should be relayed to the Mobile-Hub, so, we'll send it to
+        // the net layer with a special address, 65277, that will indicate the net
+        // layer to send the message towards the Mobile-Hub
+        // TODO
+        relayToMobileHub(param->params->model, param->params->ctx.recv_ttl);
+    }
 
     switch (event) {
     case ESP_BLE_MESH_SENSOR_SERVER_RECV_GET_MSG_EVT:
