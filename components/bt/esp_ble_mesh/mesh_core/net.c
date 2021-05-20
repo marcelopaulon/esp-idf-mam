@@ -1536,7 +1536,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
     net_buf_simple_save(&buf, &state);
 
     rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
-                      bt_mesh_elem_find(rx.ctx.recv_dst));
+                      bt_mesh_elem_find(rx.ctx.recv_dst)) || rx.ctx.recv_dst == 65278;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             net_if == BLE_MESH_NET_IF_PROXY) {
