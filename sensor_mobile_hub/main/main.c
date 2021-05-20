@@ -546,16 +546,10 @@ static void example_ble_mesh_sensor_client_cb(esp_ble_mesh_sensor_client_cb_even
 {
     if (param->params->ctx.recv_dst == 65278) {
         // DISCOVERY MESSAGE
-        printf("DISCOVERY MESSAGE RECEIVED. WILL SEND DATA TO MOBILE-HUB");
-        relayToMobileHub(param->params->model, 120); // Send data to mobile-hub
+        printf("[MOBILE-HUB] DISCOVERY MESSAGE RECEIVED");
     }
     else if (event == ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET) {
-        printf("SEND TO MOBILE HUB APPLICATION LAYER");
-        // This message should be relayed to the Mobile-Hub, so, we'll send it to
-        // the net layer with a special address, 65277, that will indicate the net
-        // layer to send the message towards the Mobile-Hub
-        // TODO
-        relayToMobileHub(param->params->model, param->params->ctx.recv_ttl);
+        printf("[MOBILE-HUB] DATA RECEIVED");
     }
 
     esp_ble_mesh_node_t *node = NULL;
