@@ -147,8 +147,18 @@ static esp_ble_mesh_prov_t provision = {
     .uuid = dev_uuid,
 };
 
-static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
+uint16_t net_idx;
+uint16_t addr;
+uint32_t iv_index;
+
+bool provisioned = false;
+
+static void prov_complete(uint16_t net_idx_t, uint16_t addr_t, uint8_t flags, uint32_t iv_index_t)
 {
+    net_idx = net_idx_t;
+    addr = addr_t;
+    iv_index = iv_index_t;
+    provisioned = true;
     ESP_LOGI(TAG, "net_idx 0x%03x, addr 0x%04x", net_idx, addr);
     ESP_LOGI(TAG, "flags 0x%02x, iv_index 0x%08x", flags, iv_index);
     board_led_operation(LED_G, LED_OFF);
@@ -525,8 +535,8 @@ void relayToMobileHub(struct esp_ble_mesh_model *model,
 
     common.opcode = ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET;
     common.model = model;
-    common.ctx.net_idx = prov_key.net_idx;
-    common.ctx.app_idx = prov_key.app_idx;
+    common.ctx.net_idx = net_idx;
+    //common.ctx.app_idx = app_idx;
     common.ctx.addr = 65277; // Special address 65277 - Send to Mobile-Hub
     common.ctx.send_ttl = ttl - 1;
     common.ctx.send_rel = false;
@@ -535,33 +545,40 @@ void relayToMobileHub(struct esp_ble_mesh_model *model,
 
     get.series_get.property_id = 0;
 
-    err = esp_ble_mesh_sensor_client_get_state(&common, &get);
+    uint16_t length = 1;
+    uint8_t status[1];
+    status[0] = 3;
+
+    err = esp_ble_mesh_server_model_send_msg(sensor_server.model, &common.ctx,
+            ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_STATUS, length, status);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to relay to Mobile-Hub (application layer)");
+        ESP_LOGE(TAG, "[SensorNode] Failed to relay to Mobile-Hub (application layer)");
     }
     else {
-        ESP_LOGW(TAG, "Sent message tp Mobile-Hub (application layer)");
+        ESP_LOGW(TAG, "[SensorNode] Sent message tp Mobile-Hub (application layer)");
     }
 }
 
 static void example_ble_mesh_sensor_server_cb(esp_ble_mesh_sensor_server_cb_event_t event,
                                               esp_ble_mesh_sensor_server_cb_param_t *param)
 {
-    ESP_LOGI(TAG, "Sensor server, event %d, src 0x%04x, dst 0x%04x, model_id 0x%04x",
+    ESP_LOGI(TAG, "[SensorNode] Sensor server, event %d, src 0x%04x, dst 0x%04x, model_id 0x%04x",
         event, param->ctx.addr, param->ctx.recv_dst, param->model->model_id);
 
-    if (param->params->ctx.recv_dst == 65278) {
+    ESP_LOGW(TAG, "[SensorNode] param->ctx.recv_dst=%d", param->ctx.recv_dst);
+
+    if (param->ctx.recv_dst == 65278) {
         // DISCOVERY MESSAGE
-        printf("DISCOVERY MESSAGE RECEIVED. WILL SEND DATA TO MOBILE-HUB");
-        relayToMobileHub(param->params->model, 120); // Send data to mobile-hub
+        printf("[SensorNode] DISCOVERY MESSAGE RECEIVED. WILL SEND DATA TO MOBILE-HUB");
+        relayToMobileHub(param->model, 120); // Send data to mobile-hub
     }
     else if (event == ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET) {
-        printf("SEND TO MOBILE HUB APPLICATION LAYER");
+        printf("[SensorNode] SEND TO MOBILE HUB APPLICATION LAYER");
         // This message should be relayed to the Mobile-Hub, so, we'll send it to
         // the net layer with a special address, 65277, that will indicate the net
         // layer to send the message towards the Mobile-Hub
         // TODO
-        relayToMobileHub(param->params->model, param->params->ctx.recv_ttl);
+        relayToMobileHub(param->model, param->ctx.recv_ttl);
     }
 
     switch (event) {
