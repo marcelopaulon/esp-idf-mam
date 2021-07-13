@@ -345,21 +345,7 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
             wait_model_id = ESP_BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV;
             wait_cid = ESP_BLE_MESH_CID_NVAL;
         } else if (param->params->opcode == ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND) {
-            if (param->status_cb.model_app_status.model_id == ESP_BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV &&
-                param->status_cb.model_app_status.company_id == ESP_BLE_MESH_CID_NVAL) {
-                example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND);
-                set.model_app_bind.element_addr = node->unicast_addr;
-                set.model_app_bind.model_app_idx = prov_key.app_idx;
-                set.model_app_bind.model_id = ESP_BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV;
-                set.model_app_bind.company_id = ESP_BLE_MESH_CID_NVAL;
-                err = esp_ble_mesh_config_client_set_state(&common, &set);
-                if (err) {
-                    ESP_LOGE(TAG, "Failed to send Config Model App Bind");
-                    return;
-                }
-                wait_model_id = ESP_BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV;
-                wait_cid = ESP_BLE_MESH_CID_NVAL;
-            }
+            
         }
         break;
     case ESP_BLE_MESH_CFG_CLIENT_PUBLISH_EVT:
