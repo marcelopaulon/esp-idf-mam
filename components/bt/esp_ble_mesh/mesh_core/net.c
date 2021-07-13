@@ -1296,14 +1296,14 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
     ///// TEST
 
-    printf("PAULON TEST TODAY %d", rx->ctx.recv_dst);
+    printf("MAM Relay recv_dst: %d", rx->ctx.recv_dst);
 
     int err = 0;
 
     uint32_t opcode;
 
     get_opcode(&buf->b, &opcode);
-    printf("HA! 0x%04x (expected 0x%04x)", opcode, ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET);
+    printf("OpCode dbg! 0x%04x (expected 0x%04x)", opcode, ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET);
 
     /// END TEST
 
@@ -1322,7 +1322,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
             expiry_us = now + (delta_ms*1000);
         }
 
-        // TODO the application layer should implement sending data back upon receiving this message
+        // NOTE the application layer should implement sending data back upon receiving this message
     } else if (rx->ctx.recv_dst == 65277) { // Send to Mobile-Hub.
         printf("SEND TO MOBILE HUB NET LAYER");
         if (bestHops == -1) {
