@@ -245,7 +245,7 @@ static esp_err_t ble_mesh_init(void)
     esp_err_t err;
 
     esp_ble_mesh_register_prov_callback(example_ble_mesh_provisioning_cb);
-    //esp_ble_mesh_register_config_server_callback(example_ble_mesh_config_server_cb);
+    esp_ble_mesh_register_config_server_callback(example_ble_mesh_config_server_cb);
     //esp_ble_mesh_register_sensor_server_callback(example_ble_mesh_sensor_server_cb);
 
     err = esp_ble_mesh_init(&provision, &composition);
