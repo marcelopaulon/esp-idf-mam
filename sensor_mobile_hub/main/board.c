@@ -38,10 +38,10 @@ static void button_release_cb(void* arg)
     time(&releaseTime);
     if (releaseTime - pushTime >= 4) {
         // Set MAM or BTM-R relay
-        example_ble_mesh_send_sensor_message(ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET, 5);
+        example_ble_mesh_send_sensor_message(ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK, 5);
     } else {
         // Send DISCOVERY packet
-        example_ble_mesh_send_sensor_message(ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET, 6);
+        example_ble_mesh_send_sensor_message(ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK, 6);
     }
 }
 
