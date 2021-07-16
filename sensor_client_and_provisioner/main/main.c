@@ -490,6 +490,7 @@ void relayToMobileHub(struct esp_ble_mesh_model *model,
 static void example_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_t event,
                                                esp_ble_mesh_generic_client_cb_param_t *param)
 {
+    printf("\nCB %d  - - - ", param->params->ctx.recv_dst);
     if (param->params->ctx.recv_dst == 65278) {
         // DISCOVERY MESSAGE
         printf("DISCOVERY MESSAGE RECEIVED. WILL SEND DATA TO MOBILE-HUB");
@@ -531,7 +532,7 @@ static esp_err_t ble_mesh_init(void)
 
     esp_ble_mesh_register_prov_callback(example_ble_mesh_provisioning_cb);
     esp_ble_mesh_register_config_client_callback(example_ble_mesh_config_client_cb);
-    //esp_ble_mesh_register_generic_client_callback(example_ble_mesh_generic_client_cb);
+    esp_ble_mesh_register_generic_client_callback(example_ble_mesh_generic_client_cb);
 
     err = esp_ble_mesh_init(&provision, &composition);
     if (err != ESP_OK) {
