@@ -12,7 +12,7 @@
 
 #include "esp_log.h"
 #include "nvs_flash.h"
-
+#include "esp_system.h" //
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_networking_api.h"
@@ -22,6 +22,7 @@
 
 #include "ble_mesh_example_init.h"
 #include "board.h"
+#include "sdOp.h"
 
 #define TAG "EXAMPLE"
 
@@ -87,7 +88,8 @@ static esp_ble_mesh_prov_t provision = {
 uint16_t net_idx;
 uint16_t addr;
 uint32_t iv_index;
-
+uint8_t chipid;//chip id
+esp_chip_info_t chip_info;//talvez util, checar definicao
 bool provisioned = false;
 
 static void prov_complete(uint16_t net_idx_t, uint16_t addr_t, uint8_t flags, uint32_t iv_index_t)
@@ -97,6 +99,17 @@ static void prov_complete(uint16_t net_idx_t, uint16_t addr_t, uint8_t flags, ui
     iv_index = iv_index_t;
     provisioned = true;
     ESP_LOGI(TAG, "net_idx 0x%03x, addr 0x%04x", net_idx, addr);
+    esp_efuse_mac_get_default(&chipid);
+    setKey(net_idx);
+    setId(chipid);
+    valoresTeste();
+    startSd();
+    //esp_chip_info(&chip_info);
+    //ESP_LOGI(TAG, "silicon revision %d, ", chip_info.revision);
+    
+    gravaConfig();
+    update();
+    //debugPrint();
     ESP_LOGI(TAG, "flags 0x%02x, iv_index 0x%08x", flags, iv_index);
     board_led_operation(LED_G, LED_OFF);
 }
