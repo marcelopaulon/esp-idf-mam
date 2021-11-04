@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_system.h"
+
 #include "esp_log.h"
 #include "nvs_flash.h"
 
@@ -26,6 +30,11 @@
 #define TAG "EXAMPLE"
 
 #define CID_ESP     0x02E5
+
+bool receivedMhub = false;
+bool *receivedMhubPtr = &receivedMhub;
+
+bool initialized = false;
 
 static uint8_t dev_uuid[ESP_BLE_MESH_OCTET16_LEN] = { 0x32, 0x10 };
 
@@ -99,6 +108,7 @@ static void prov_complete(uint16_t net_idx_t, uint16_t addr_t, uint8_t flags, ui
     ESP_LOGI(TAG, "net_idx 0x%03x, addr 0x%04x", net_idx, addr);
     ESP_LOGI(TAG, "flags 0x%02x, iv_index 0x%08x", flags, iv_index);
     board_led_operation(LED_G, LED_OFF);
+    initialized = true;
 }
 
 static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
@@ -240,6 +250,21 @@ void example_ble_mesh_send_sensor_message(uint32_t opcode, int idx)
     ESP_LOGW(TAG, "Sending message with opcode 0x%04x", opcode);
 }
 
+void discoverySender(void *pvParameter)
+{
+ 
+    while(1) {
+        if (!initialized) {
+            vTaskDelay(100 / portTICK_RATE_MS);
+            continue;
+        }
+
+        // Send DISCOVERY packet
+        example_ble_mesh_send_sensor_message(ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK, 6);
+        vTaskDelay(3000 / portTICK_RATE_MS);
+    }
+}
+
 static esp_err_t ble_mesh_init(void)
 {
     esp_err_t err;
@@ -281,6 +306,8 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
     board_init();
+
+    xTaskCreate(&discoverySender, "discoverySender", 2048,NULL,5,NULL );
 
     err = bluetooth_init();
     if (err) {
