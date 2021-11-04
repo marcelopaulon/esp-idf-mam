@@ -673,6 +673,8 @@ bool bt_mesh_fixed_group_match(uint16_t addr)
 
 int messages = 0;
 
+extern bool *receivedMhubPtr;
+
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
     struct bt_mesh_model *models = NULL, *model = NULL;
@@ -767,6 +769,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             // TODO esp_ble_mesh_sensor_client_get_state(xxxx, yyy)
         }
         BT_WARN("WILL CALL IMPL");
+        *receivedMhubPtr = true;
         printf("WILL CALL IMPL");
         op->func(model, &rx->ctx, buf);
         net_buf_simple_restore(buf, &state);
