@@ -51,6 +51,8 @@
 bool receivedMhub = false;
 bool *receivedMhubPtr = &receivedMhub;
 
+void sendNewDataToMobileHub();
+
 void blinky(void *pvParameter)
 {
  
@@ -63,6 +65,7 @@ void blinky(void *pvParameter)
             continue;
         }
 
+        sendNewDataToMobileHub();
         printf("Will blink NOW!!!!!!!\n");
 
         /* Blink off (output low) */
@@ -101,6 +104,43 @@ static esp_ble_mesh_cfg_srv_t config_server = {
 
 static esp_ble_mesh_client_t config_client;
 static esp_ble_mesh_client_t prop_client;
+
+void sendNewDataToMobileHub() {
+    printf("[NEW DATA] Sending new data to Mobile-Hub");
+
+    NET_BUF_SIMPLE_DEFINE(buf, 128);
+
+    net_buf_simple_init(&buf, 1);
+    char *myData = "mystring";
+    net_buf_simple_add_mem(&buf, myData, strlen(myData)+1);
+
+
+    esp_ble_mesh_client_common_param_t common = {0};
+    esp_err_t err = ESP_OK;
+
+    common.opcode = ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET;
+    common.model = prop_client.model;
+    common.ctx.net_idx = prov_key.net_idx;
+    common.ctx.app_idx = prov_key.app_idx;
+    common.ctx.addr = 65277; // Special address 65277 - Send to Mobile-Hub
+    common.ctx.send_ttl = 120;
+    common.ctx.send_rel = false;
+    common.msg_timeout = 0;
+    common.msg_role = 0x00; // ROLE_NODE
+
+
+    esp_ble_mesh_generic_client_set_state_t gen_client_set = {0};
+    gen_client_set.user_property_set.property_id = 65277;
+    gen_client_set.user_property_set.property_value = &buf;
+
+    err = esp_ble_mesh_generic_client_set_state(&common, &gen_client_set);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "[NEW DATA] Failed to send NEW DATA to Mobile-Hub (application layer)");
+    }
+    else {
+        ESP_LOGW(TAG, "[NEW DATA] Sent NEW DATA to Mobile-Hub (application layer)");
+    }
+}
 
 //ESP_BLE_MESH_MODEL_PUB_DEFINE(my_cli_pub, 2 + 1, ROLE_NODE);
 
