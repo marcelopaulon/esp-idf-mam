@@ -671,6 +671,8 @@ bool bt_mesh_fixed_group_match(uint16_t addr)
     }
 }*/
 
+int messages = 0;
+
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
     struct bt_mesh_model *models = NULL, *model = NULL;
@@ -696,7 +698,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     if (rx->ctx.recv_dst == 65279) {
         printf("SWITCH MAM RELAY APPLICATION LAYER"); // This should never happen
     } else if (rx->ctx.recv_dst == 65278) {
-        printf("DISCOVERY MESSAGE APPLICATION LAYER");
+        printf("DISCOVERY MESSAGE APPLICATION LAYER %d\n", ++messages);
     } else if (opcode == 0x8230) {
         printf("SEND TO MOBILE HUB APPLICATION LAYER");
         // This message should be relayed to the Mobile-Hub, so, we'll send it to
@@ -732,7 +734,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             continue;
         }
 
-        if (!model_has_dst(model, rx->ctx.recv_dst)) {
+        if (!model_has_dst(model, rx->ctx.recv_dst) && rx->ctx.recv_dst != 65278) {
             continue;
         }
 
@@ -764,7 +766,8 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             //relayToMobileHub(model, &rx->ctx, buf);
             // TODO esp_ble_mesh_sensor_client_get_state(xxxx, yyy)
         }
-
+        BT_WARN("WILL CALL IMPL");
+        printf("WILL CALL IMPL");
         op->func(model, &rx->ctx, buf);
         net_buf_simple_restore(buf, &state);
     }
