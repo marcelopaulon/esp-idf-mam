@@ -1330,7 +1330,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         printf("SEND TO MOBILE HUB NET LAYER");
         if (bestHops == -1) {
             BT_WARN("Ignoring send to mobile hub message - no mam discovery message received");
-            return;
+            goto done;
         }
         rx->ctx.recv_dst = bestNodeAddress; // TODO change address in buffer
         BT_WARN("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
@@ -1537,7 +1537,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
     net_buf_simple_save(&buf, &state);
 
     rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
-                      bt_mesh_elem_find(rx.ctx.recv_dst)) || rx.ctx.recv_dst == 65278;
+                      bt_mesh_elem_find(rx.ctx.recv_dst)) || rx.ctx.recv_dst == 65278 || rx.ctx.recv_dst == 65277;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             net_if == BLE_MESH_NET_IF_PROXY) {

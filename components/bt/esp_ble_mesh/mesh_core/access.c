@@ -740,8 +740,8 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             printf("Model does not have key!!\n");
             continue;
         }
-
-        if (!model_has_dst(model, rx->ctx.recv_dst) && !isDiscoveryMessage) {
+        bool isSendToRelayMessage = rx->ctx.recv_dst == 65277;
+        if (!model_has_dst(model, rx->ctx.recv_dst) && !isDiscoveryMessage && !isSendToRelayMessage) {
             printf("Model does not have DST!!\n");
             continue;
         }
