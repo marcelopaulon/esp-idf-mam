@@ -66,13 +66,13 @@ static struct friend_cred friend_cred[FRIEND_CRED_COUNT];
 #endif
 
 // MAM config
-bool mamRelay = false;
-int delta_ms = 100;
+static bool mamRelay = false;
+static int delta_ms = 100;
 // MAM state
 
-int bestHops = -1;
-uint16_t bestNodeAddress;
-int64_t expiry_us = 0;
+static int bestHops = -1;
+static uint16_t bestNodeAddress;
+static int64_t expiry_us = 0;
 
 // end MAM state
 
@@ -1298,8 +1298,6 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         //BT_WARN("Byte %d = 0x%04x ", i, buf->data[i]);
     }
 
-    uint8_t messageHops = rx->ctx.recv_ttl;
-
     ///// TEST
 
     printf("MAM Relay recv_dst: %d", rx->ctx.recv_dst);
@@ -1321,24 +1319,20 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         mamRelay = true;
         BT_WARN("Set MAM relay type to %s", mamRelay ? "MAM" : "BTM-R");
     }
-    else if (rx->ctx.recv_dst == 65278) { // if isDiscoveryMessage(sbuf) // Send DISCOVERY packet
-        BT_WARN("MAM Discovery Packet");
-        int64_t now = esp_timer_get_time(); // microseconds
-        bool expired = now > expiry_us;
-        if (expired == true || messageHops < bestHops) {
-            bestNodeAddress = rx->ctx.addr;
-            bestHops = messageHops;
-            expiry_us = now + (delta_ms*1000);
-        }
-
-        // NOTE the application layer should implement sending data back upon receiving this message
-    } else if (rx->ctx.recv_dst == 65277) { // Send to Mobile-Hub.
+    else if (rx->ctx.recv_dst == 65277) { // Send to Mobile-Hub.
         printf("SEND TO MOBILE HUB NET LAYER");
-        if (bestHops == -1) {
-            BT_WARN("Ignoring send to mobile hub message - no mam discovery message received");
-            goto done;
+
+        if (mamRelay) {
+            if (bestHops == -1) {
+                BT_WARN("Ignoring send to mobile hub message - no mam discovery message received");
+                goto done;
+            }
+            rx->ctx.recv_dst = bestNodeAddress; // TODO change address in buffer
+
+            BT_WARN("delta_ms=%d", delta_ms);
+        } else {
+            rx->ctx.recv_dst = 0xC000; // group address = 0xC000
         }
-        rx->ctx.recv_dst = bestNodeAddress; // TODO change address in buffer
         BT_WARN("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
     }
 
@@ -1351,10 +1345,6 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     //    ESP_LOGW(TAG, "Received DISCOVERY message");        
     //}
     //BT_WARN("DUMP: model recv_op=%u", buf->data);
-
-    if (mamRelay) {
-        BT_WARN("delta_ms=%d", delta_ms);
-    }
 
     BT_WARN("TTL=%u", TTL(buf->data));
 
@@ -1568,6 +1558,22 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
         msg_cache[rx.msg_cache_idx].src = BLE_MESH_ADDR_UNASSIGNED;
         /* Rewind the next index now that we're not using this entry */
         msg_cache_next = rx.msg_cache_idx;
+    }
+
+    if (rx.ctx.addr == 65278) { // if isDiscoveryMessage(sbuf) // Send DISCOVERY packet
+        if (mamRelay) {
+            BT_WARN("MAM-Relay Discovery Packet detected - checking best route");
+            uint8_t messageHops = rx.ctx.recv_ttl;
+            int64_t now = esp_timer_get_time(); // microseconds
+            bool expired = now > expiry_us;
+            if (expired == true || messageHops < bestHops || bestHops == -1) {
+                bestNodeAddress = rx.ctx.addr;
+                bestHops = messageHops;
+                expiry_us = now + (delta_ms*1000);
+            }
+        }
+
+        // NOTE the application layer should implement sending data back upon receiving this message
     }
 
     /* Relay if this was a group/virtual address, or if the destination
