@@ -694,7 +694,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     bool sendToMobileHub = false;
 
     if (rx->ctx.recv_dst == 65279) {
-        printf("SWITCH MAM RELAY APPLICATION LAYER"); // This should never happen
+        printf("ERROR! SHOULD NOT HAPPEN - SWITCH MAM RELAY APPLICATION LAYER"); // This should never happen
     } else if (rx->ctx.recv_dst == 65278) {
         printf("DISCOVERY MESSAGE APPLICATION LAYER");
     } else if (opcode == 0x8230) {
