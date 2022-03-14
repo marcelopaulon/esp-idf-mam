@@ -1236,6 +1236,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         }
     }
 
+    printf("RELAY 2 - rx.ctx.recv_dst=%u\n", rx->ctx.recv_dst);
+    
     if (rx->net_if == BLE_MESH_NET_IF_ADV &&
             bt_mesh_relay_get() != BLE_MESH_RELAY_ENABLED &&
             bt_mesh_gatt_proxy_get() != BLE_MESH_GATT_PROXY_ENABLED) {
@@ -1314,9 +1316,12 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     /// END TEST
 
 
-    if (rx->ctx.recv_dst == 65279) {
-        BT_WARN("Switching MAM relay type to %s", mamRelay ? "BTM-R" : "MAM");
-        mamRelay = !mamRelay;
+    if (rx->ctx.recv_dst == 65276) { // 65279
+        mamRelay = false;
+        BT_WARN("Set MAM relay type to %s", mamRelay ? "MAM" : "BTM-R");
+    } else if (rx->ctx.recv_dst == 65275) {
+        mamRelay = true;
+        BT_WARN("Set MAM relay type to %s", mamRelay ? "MAM" : "BTM-R");
     }
     else if (rx->ctx.recv_dst == 65278) { // if isDiscoveryMessage(sbuf) // Send DISCOVERY packet
         BT_WARN("MAM Discovery Packet");
@@ -1571,11 +1576,12 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 
     /* Relay if this was a group/virtual address, or if the destination
      * was neither a local element nor an LPN we're Friends for.
-     * MAM: relay if address 65279 or 65278 or 65277 (reserved as indicators for MAM relay system)
+     * MAM: relay if address 65279 or 65278 or 65277 or 65276 or 65275 (reserved as indicators for MAM relay system)
      */
+    printf("Received something - rx.ctx.recv_dst=%u\n", rx.ctx.recv_dst);
     if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
             (!rx.local_match && !rx.friend_match) ||
-            rx.ctx.recv_dst == 65279 || rx.ctx.recv_dst == 65278 || rx.ctx.recv_dst == 65277) {
+            rx.ctx.recv_dst == 65279 || rx.ctx.recv_dst == 65278 || rx.ctx.recv_dst == 65277 || rx.ctx.recv_dst == 65276 || rx.ctx.recv_dst == 65275) {
         net_buf_simple_restore(&buf, &state);
         bt_mesh_net_relay(&buf, &rx);
     }

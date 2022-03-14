@@ -18,6 +18,7 @@
 #include "esp_ble_mesh_provisioning_api.h"
 #include "esp_ble_mesh_networking_api.h"
 #include "esp_ble_mesh_config_model_api.h"
+#include "esp_ble_mesh_local_data_operation_api.h"
 
 #include "ble_mesh_example_init.h"
 #include "ble_mesh_example_nvs.h"
@@ -459,7 +460,7 @@ void example_ble_mesh_send_vendor_message(bool resend)
 
     ctx.net_idx = prov_key.net_idx;
     ctx.app_idx = prov_key.app_idx;
-    ctx.addr = store.server_addr;
+    ctx.addr = store.server_addr; // Send from Mobile-Hub (this node) to others, DISCOVERY
     ctx.send_ttl = MSG_SEND_TTL;
     ctx.send_rel = MSG_SEND_REL;
     opcode = ESP_BLE_MESH_VND_MODEL_OP_SEND;
@@ -502,6 +503,16 @@ uint64_t msg_entry_hash(const void *item, uint64_t seed0, uint64_t seed1) {
 
 struct hashmap *map = NULL;
 
+int duplicates = -1;
+
+bool stats_iter(const void *item, void *udata) {
+    const struct msgEntry *msgEntry = item;
+    if (msgEntry->count > 1) {
+        duplicates += (msgEntry->count - 1);
+    }
+    return true;
+}
+
 static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event,
                                              esp_ble_mesh_model_cb_param_t *param)
 {
@@ -538,6 +549,17 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         }
 
         ESP_LOGI(TAG, "Received publish message (%u) 0x%06x the string %s", currentCount, param->client_recv_publish_msg.opcode, msgKey);
+
+        if (strcmp("cmd-GRADYS-stats", msgKey) == 0) {
+            ESP_LOGI(TAG, "Mobile-Hub stats:");
+            ESP_LOGI(TAG, "Number of unique packets: %u", hashmap_count(map));
+            duplicates = 0;
+            hashmap_scan(map, stats_iter, NULL);
+            ESP_LOGI(TAG, "Number of duplicate packets: %u", duplicates);
+        } else if (strcmp("cmd-GRADYS-reset", msgKey) == 0) {
+            hashmap_clear(map, false);
+            ESP_LOGI(TAG, "Simulation was reset.");
+        }
         
         break;
     }
@@ -546,6 +568,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         example_ble_mesh_send_vendor_message(true);
         break;
     default:
+        ESP_LOGW(TAG, "Unrecognized event %d", event);
         break;
     }
 }
@@ -594,6 +617,15 @@ static esp_err_t ble_mesh_init(void)
     }
 
     ESP_LOGI(TAG, "ESP BLE Mesh Provisioner initialized");
+
+    err = esp_ble_mesh_model_subscribe_group_addr(PROV_OWN_ADDR, CID_ESP,
+                                                  ESP_BLE_MESH_VND_MODEL_ID_CLIENT, 0xC000);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to register to group 0x%s", esp_err_to_name(err));
+    }
+    
+    ESP_LOGI(TAG, "Subscribed to group 0xC000");
+
 
     return ESP_OK;
 }
