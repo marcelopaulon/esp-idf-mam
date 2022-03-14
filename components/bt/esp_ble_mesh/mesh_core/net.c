@@ -1235,8 +1235,6 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
             return;
         }
     }
-
-    printf("RELAY 2 - rx.ctx.recv_dst=%u\n", rx->ctx.recv_dst);
     
     if (rx->net_if == BLE_MESH_NET_IF_ADV &&
             bt_mesh_relay_get() != BLE_MESH_RELAY_ENABLED &&
@@ -1294,7 +1292,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     priv = rx->sub->keys[rx->sub->kr_flag].privacy;
     nid = rx->sub->keys[rx->sub->kr_flag].nid;
 
-    BT_WARN("Relaying packet. TTL is now %u. ", TTL(buf->data));
+    //BT_WARN("Relaying packet. TTL is now %u. ", TTL(buf->data));
 
     for (int i = 0; i < buf->size; i++) {
         //BT_WARN("Byte %d = 0x%04x ", i, buf->data[i]);
@@ -1310,8 +1308,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
     uint32_t opcode;
 
-    get_opcode(&buf->b, &opcode);
-    printf("OpCode dbg! 0x%04x (expected 0x%04x)", opcode, ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET);
+    //get_opcode(&buf->b, &opcode);
+    //printf("OpCode dbg! 0x%04x (expected 0x%04x)", opcode, ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET);
 
     /// END TEST
 
@@ -1341,10 +1339,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
             return;
         }
         rx->ctx.recv_dst = bestNodeAddress; // TODO change address in buffer
+        BT_WARN("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
     }
-
-    BT_WARN("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
-
 
     //[5] = ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET, // Set MAM or BTM-R relay
     //[6] = ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_STATUS // Send DISCOVERY packet
@@ -1578,7 +1574,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
      * was neither a local element nor an LPN we're Friends for.
      * MAM: relay if address 65279 or 65278 or 65277 or 65276 or 65275 (reserved as indicators for MAM relay system)
      */
-    printf("Received something - rx.ctx.recv_dst=%u\n", rx.ctx.recv_dst);
+    //printf("Received something - rx.ctx.recv_dst=%u\n", rx.ctx.recv_dst);
     if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
             (!rx.local_match && !rx.friend_match) ||
             rx.ctx.recv_dst == 65279 || rx.ctx.recv_dst == 65278 || rx.ctx.recv_dst == 65277 || rx.ctx.recv_dst == 65276 || rx.ctx.recv_dst == 65275) {

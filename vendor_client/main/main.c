@@ -520,6 +520,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
 
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
+        ESP_LOGI(TAG, "!!!!! ESP_BLE_MESH_MODEL_OPERATION_EVT !!!!! ABCDE");
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_STATUS) {
             int64_t end_time = esp_timer_get_time();
             uint8_t *d = param->model_operation.msg;
@@ -529,14 +530,23 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         }
         break;
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
+        ESP_LOGI(TAG, "!!!!! ESP_BLE_MESH_MODEL_SEND_COMP_EVT !!!!! ABCDE");
+
         if (param->model_send_comp.err_code) {
-            ESP_LOGE(TAG, "Failed to send message 0x%06x", param->model_send_comp.opcode);
+            if (param->model_send_comp.ctx->addr == 65278) {
+            
+                ESP_LOGE(TAG, "[SHOULD NOT HAPPEN] KAKAKAKAKA APPLICATION MOBILE-HUB RECEIVED a Discovery Message successfully!!");
+
+            } else {
+                ESP_LOGE(TAG, "Failed to send message 0x%06x", param->model_send_comp.opcode);
+            }
             break;
         }
         start_time = esp_timer_get_time();
         ESP_LOGI(TAG, "Send 0x%06x", param->model_send_comp.opcode);
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT: {
+        ESP_LOGI(TAG, "!!!!! ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT !!!!! ABCDE");
         uint8_t *d2 = param->client_recv_publish_msg.msg;
         char *msgKey = (char *)d2;
         uint8_t currentCount = 1;
@@ -564,10 +574,12 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         break;
     }
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
+        ESP_LOGI(TAG, "!!!!! ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT !!!!! ABCDE");
         ESP_LOGW(TAG, "Client message 0x%06x timeout", param->client_send_timeout.opcode);
         example_ble_mesh_send_vendor_message(true);
         break;
     default:
+        ESP_LOGI(TAG, "!!!!! unknown!! !!!!! ABCDE");
         ESP_LOGW(TAG, "Unrecognized event %d", event);
         break;
     }

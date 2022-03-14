@@ -692,13 +692,19 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     BT_DBG("OpCode 0x%08x", opcode);
 
     bool sendToMobileHub = false;
+    bool isDiscoveryMessage = false;
 
     if (rx->ctx.recv_dst == 65279) {
-        printf("ERROR! SHOULD NOT HAPPEN - SWITCH MAM RELAY APPLICATION LAYER"); // This should never happen
+        printf("ERROR! SHOULD NOT HAPPEN - SWITCH MAM RELAY APPLICATION LAYER\n"); // This should never happen
     } else if (rx->ctx.recv_dst == 65278) {
-        printf("DISCOVERY MESSAGE APPLICATION LAYER");
+        printf("DISCOVERY MESSAGE APPLICATION LAYER from %u\n", rx->ctx.addr);
+        opcode = 12583653;
+        rx->ctx.addr = 65278;
+        rx->ctx.recv_dst = 49152;
+        
+        isDiscoveryMessage = true;
     } else if (opcode == 0x8230) {
-        printf("SEND TO MOBILE HUB APPLICATION LAYER");
+        printf("SEND TO MOBILE HUB APPLICATION LAYER\n");
         // This message should be relayed to the Mobile-Hub, so, we'll send it to
         // the net layer with a special address, 65277, that will indicate the net
         // layer to send the message towards the Mobile-Hub
@@ -722,6 +728,8 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             count = elem->vnd_model_count;
         }
 
+        printf("Debug - opcode=%u and dst=%u", opcode, rx->ctx.recv_dst);
+
         op = find_op(models, count, opcode, &model);
         if (!op) {
             BT_DBG("No OpCode 0x%08x for elem %d", opcode, i);
@@ -729,14 +737,16 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         }
 
         if (!model_has_key(model, rx->ctx.app_idx)) {
+            printf("Model does not have key!!\n");
             continue;
         }
 
-        if (!model_has_dst(model, rx->ctx.recv_dst)) {
+        if (!model_has_dst(model, rx->ctx.recv_dst) && !isDiscoveryMessage) {
+            printf("Model does not have DST!!\n");
             continue;
         }
 
-        if (buf->len < op->min_len) {
+        if (buf->len < op->min_len && !isDiscoveryMessage) {
             BT_ERR("Too short message for OpCode 0x%08x", opcode);
             continue;
         }
@@ -760,7 +770,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         net_buf_simple_save(buf, &state);
 
         if (sendToMobileHub) {
-            //printf("Application layer relay is sending to the net layer towards the Mobile-Hub....");
+            printf("Application layer relay is sending to the net layer towards the Mobile-Hub....\n");
             //relayToMobileHub(model, &rx->ctx, buf);
             // TODO esp_ble_mesh_sensor_client_get_state(xxxx, yyy)
         }
