@@ -460,7 +460,7 @@ void example_ble_mesh_send_vendor_message(bool resend)
 
     ctx.net_idx = prov_key.net_idx;
     ctx.app_idx = prov_key.app_idx;
-    ctx.addr = store.server_addr; // Send from Mobile-Hub (this node) to others, DISCOVERY
+    ctx.addr = 65278; // store.server_addr; // Send from Mobile-Hub (this node) to others, DISCOVERY
     ctx.send_ttl = MSG_SEND_TTL;
     ctx.send_rel = MSG_SEND_REL;
     opcode = ESP_BLE_MESH_VND_MODEL_OP_SEND;
@@ -520,12 +520,12 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
 
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
-        ESP_LOGI(TAG, "!!!!! ESP_BLE_MESH_MODEL_OPERATION_EVT !!!!! ABCDE");
+        ESP_LOGE (TAG, "!!!!! ESP_BLE_MESH_MODEL_OPERATION_EVT !!!!! ABCDE %u", param->model_operation.opcode);
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_STATUS) {
             int64_t end_time = esp_timer_get_time();
             uint8_t *d = param->model_operation.msg;
             char *levalue = (char *)d;
-            ESP_LOGI(TAG, "DISABLEDDAAAAAA Recv 0x%06x, tid 0x%04x, time %lldus the string %s",
+            ESP_LOGE(TAG, "DISABLEDDAAAAAA Recv 0x%06x, tid 0x%04x, time %lldus the string %s",
                 param->model_operation.opcode, store.vnd_tid, end_time - start_time, levalue);
         }
         break;
@@ -542,6 +542,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
             }
             break;
         }
+        
         start_time = esp_timer_get_time();
         ESP_LOGI(TAG, "Send 0x%06x", param->model_send_comp.opcode);
         break;
@@ -576,7 +577,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
         ESP_LOGI(TAG, "!!!!! ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT !!!!! ABCDE");
         ESP_LOGW(TAG, "Client message 0x%06x timeout", param->client_send_timeout.opcode);
-        example_ble_mesh_send_vendor_message(true);
+        //example_ble_mesh_send_vendor_message(true);
         break;
     default:
         ESP_LOGI(TAG, "!!!!! unknown!! !!!!! ABCDE");
@@ -642,6 +643,18 @@ static esp_err_t ble_mesh_init(void)
     return ESP_OK;
 }
 
+void blinky(void *pvParameter)
+{
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
+    printf("Starting Mobile-Hub periodic send task...");
+
+    while(1) {
+        printf("Sending Mobile-Hub discovery packet!");
+        example_ble_mesh_send_vendor_message(false);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+    }
+}
+
 void app_main(void)
 {
     esp_err_t err;
@@ -679,4 +692,6 @@ void app_main(void)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Bluetooth mesh init failed (err %d)", err);
     }
+
+    xTaskCreatePinnedToCore(&blinky, "blinky", 2048, NULL,5,NULL, APP_CPU_NUM);
 }

@@ -53,7 +53,7 @@ int sessionReboots = 0;
 static uint8_t dev_uuid[ESP_BLE_MESH_OCTET16_LEN] = { 0x32, 0x10 };
 
 static esp_ble_mesh_cfg_srv_t config_server = {
-    .relay = ESP_BLE_MESH_RELAY_ENABLED, //ESP_BLE_MESH_RELAY_DISABLED,
+    .relay = ESP_BLE_MESH_RELAY_DISABLED, //ESP_BLE_MESH_RELAY_ENABLED,
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
 #if defined(CONFIG_BLE_MESH_FRIEND)
     .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
@@ -187,7 +187,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_SEND) {
-            uint16_t tid = *(uint16_t *)param->model_operation.msg;
+            /*uint16_t tid = *(uint16_t *)param->model_operation.msg;
             char mydata[1024] = "";
             sprintf(mydata, "GRADYS-n%d-r%d-m%u", nodeId, sessionReboots, messageSequence++);
             
@@ -198,7 +198,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
                     strlen(mydata)+1, (uint8_t *)mydata); // Sends data towards the Mobile-Hub
             if (err) {
                 ESP_LOGE(TAG, "Failed to send message 0x%06x", ESP_BLE_MESH_VND_MODEL_OP_STATUS);
-            }
+            }*/
         }
         break;
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
