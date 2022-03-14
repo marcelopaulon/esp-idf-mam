@@ -44,7 +44,7 @@ int sessionReboots = 0;
 static uint8_t dev_uuid[ESP_BLE_MESH_OCTET16_LEN] = { 0x32, 0x10 };
 
 static esp_ble_mesh_cfg_srv_t config_server = {
-    .relay = ESP_BLE_MESH_RELAY_DISABLED,
+    .relay = ESP_BLE_MESH_RELAY_ENABLED, //ESP_BLE_MESH_RELAY_DISABLED,
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
 #if defined(CONFIG_BLE_MESH_FRIEND)
     .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
@@ -90,6 +90,9 @@ static esp_ble_mesh_prov_t provision = {
     .uuid = dev_uuid,
 };
 
+uint16_t my_net_idx = 0;
+uint16_t my_addr = 0;
+
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
 {
     ESP_LOGI(TAG, "net_idx 0x%03x, addr 0x%04x", net_idx, addr);
@@ -102,6 +105,9 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32
     if (err) {
         ESP_LOGE(TAG, "Failed to register to group 0x%s", esp_err_to_name(err));
     }
+
+    my_net_idx = net_idx;
+    my_addr = addr;
 }
 
 static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
@@ -170,25 +176,39 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_SEND) {
-            uint16_t tid = *(uint16_t *)param->model_operation.msg;
+            
+            if (param->model_operation.ctx->addr == 65278) {
+                ESP_LOGE(TAG, "KAKAKAKAKA APPLICATION SENSOR RECEIVED a Discovery Message successfully!!");
+
+                param->model_operation.ctx->net_idx = my_net_idx;
+                param->model_operation.ctx->app_idx = 0;
+                param->model_operation.ctx->addr = 65277; // Send to Mobile-Hub!
+                param->model_operation.ctx->send_ttl = 3;
+                param->model_operation.ctx->send_rel = false;
+            } else {
+                ESP_LOGE(TAG, "Not a discovery message - opcode 0x%06x from %u", param->model_operation.opcode, param->model_operation.ctx->addr);
+                
+                uint16_t tid = *(uint16_t *)param->model_operation.msg;
+                ESP_LOGI(TAG, "Recv 0x%06x, tid 0x%04x", param->model_operation.opcode, tid);
+            }           
+
             char mydata[1024] = "";
             sprintf(mydata, "GRADYS-n%d-r%d-m%u", nodeId, sessionReboots, messageSequence++);
             
-            ESP_LOGI(TAG, "Recv 0x%06x, tid 0x%04x", param->model_operation.opcode, tid);
             esp_err_t err = esp_ble_mesh_server_model_send_msg(&vnd_models[0],
                     param->model_operation.ctx, ESP_BLE_MESH_VND_MODEL_OP_STATUS,
-                    strlen(mydata)+1, (uint8_t *)mydata);
+                    strlen(mydata)+1, (uint8_t *)mydata); // Sends data towards the Mobile-Hub
             if (err) {
-                ESP_LOGE(TAG, "Failed to send message 0x%06x", ESP_BLE_MESH_VND_MODEL_OP_STATUS);
+                ESP_LOGE(TAG, "Failed to send message 0x%06x - reason=%d", ESP_BLE_MESH_VND_MODEL_OP_STATUS, err);
             }
         }
         break;
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
         if (param->model_send_comp.err_code) {
-            ESP_LOGE(TAG, "Failed to send message 0x%06x", param->model_send_comp.opcode);
+            ESP_LOGE(TAG, "Failed to send completion message 0x%06x", param->model_send_comp.opcode);
             break;
         }
-        ESP_LOGI(TAG, "Send 0x%06x", param->model_send_comp.opcode);
+        ESP_LOGI(TAG, "Send completion 0x%06x", param->model_send_comp.opcode);
         break;
     default:
         break;
