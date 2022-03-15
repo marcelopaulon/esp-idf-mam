@@ -206,7 +206,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
             ESP_LOGE(TAG, "Failed to send completion message 0x%06x", param->model_send_comp.opcode);
             break;
         }
-        ESP_LOGI(TAG, "Send completion 0x%06x", param->model_send_comp.opcode);
+        ESP_LOGD(TAG, "Send completion 0x%06x", param->model_send_comp.opcode);
         break;
     default:
         break;
@@ -517,10 +517,32 @@ static int resetSimulation(int argc, char **argv)
     return 0;
 }
 
+static void requestCounts() {
+    char mydata[1024] = "cmd-GRADYS-counts";
+
+    esp_ble_mesh_msg_ctx_t ctx = {0};
+
+    ctx.net_idx = my_net_idx;
+    ctx.app_idx = 0;
+    ctx.addr = 0xC000; // Send from Mobile-Hub (this node) to others, group address = 0xC000
+    ctx.send_ttl = 3;
+    ctx.send_rel = false;
+    
+    esp_err_t err = esp_ble_mesh_server_model_send_msg(&vnd_models[0],
+            &ctx, ESP_BLE_MESH_VND_MODEL_OP_SEND,
+            strlen(mydata)+1, (uint8_t *)mydata); // Sends data to all nodes
+    if (err) {
+        ESP_LOGE(TAG, "Failed to send message 0x%06x", ESP_BLE_MESH_VND_MODEL_OP_SEND);
+    }
+}
+
 static int statsSimulation(int argc, char **argv)
 {
-    printf("%s, %s\n", __func__, "Requesting stats from Mobile-Hub");
     printf("%s, %s\n", __func__, "Requesting stats from all nodes");
+
+    requestCounts();
+
+    printf("%s, %s\n", __func__, "Requesting stats from Mobile-Hub");
     
     char mydata[1024] = "cmd-GRADYS-stats";
 

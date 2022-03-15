@@ -176,9 +176,8 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_SEND) {
-            
             if (param->model_operation.ctx->addr == 65278) {
-                ESP_LOGE(TAG, "KAKAKAKAKA APPLICATION SENSOR RECEIVED a Discovery Message successfully!!");
+                ESP_LOGD(TAG, "KAKAKAKAKA APPLICATION SENSOR RECEIVED a Discovery Message successfully!!");
 
                 param->model_operation.ctx->net_idx = my_net_idx;
                 param->model_operation.ctx->app_idx = 0;
@@ -186,10 +185,16 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
                 param->model_operation.ctx->send_ttl = 3;
                 param->model_operation.ctx->send_rel = false;
             } else {
-                ESP_LOGE(TAG, "Not a discovery message - opcode 0x%06x from %u", param->model_operation.opcode, param->model_operation.ctx->addr);
-                
-                uint16_t tid = *(uint16_t *)param->model_operation.msg;
-                ESP_LOGI(TAG, "Recv 0x%06x, tid 0x%04x", param->model_operation.opcode, tid);
+                uint8_t *d2 = param->model_operation.msg;
+                char *msgKey = (char *)d2;
+
+                if (strcmp(msgKey, "cmd-GRADYS-counts") == 0) {
+                    printf("Number of packets sent=%u", messageSequence);
+                } else {
+                    ESP_LOGE(TAG, "Not a discovery message - opcode 0x%06x from %u - %s", param->model_operation.opcode, param->model_operation.ctx->addr, msgKey);
+                    //uint16_t tid = *(uint16_t *)param->model_operation.msg;
+                    //ESP_LOGI(TAG, "Recv 0x%06x, tid 0x%04x", param->model_operation.opcode, tid);
+                }
             }           
 
             char mydata[1024] = "";
@@ -208,9 +213,10 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
             ESP_LOGE(TAG, "Failed to send completion message 0x%06x", param->model_send_comp.opcode);
             break;
         }
-        ESP_LOGI(TAG, "Send completion 0x%06x", param->model_send_comp.opcode);
+        ESP_LOGD(TAG, "Send completion 0x%06x", param->model_send_comp.opcode);
         break;
     default:
+        printf("ATTENTION - SOME UNHANDLED EVENT WAS RECEIVED ZZZZZZZZZ");
         break;
     }
 }

@@ -1300,7 +1300,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
     ///// TEST
 
-    printf("MAM Relay recv_dst: %d", rx->ctx.recv_dst);
+    BT_DBG("MAM Relay recv_dst: %d", rx->ctx.recv_dst);
 
     int err = 0;
 
@@ -1320,7 +1320,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         BT_WARN("Set MAM relay type to %s", mamRelay ? "MAM" : "BTM-R");
     }
     else if (rx->ctx.recv_dst == 65277) { // Send to Mobile-Hub.
-        printf("SEND TO MOBILE HUB NET LAYER");
+        BT_INFO("SEND TO MOBILE HUB NET LAYER");
 
         if (mamRelay) {
             if (bestHops == -1) {
@@ -1329,11 +1329,11 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
             }
             rx->ctx.recv_dst = bestNodeAddress; // TODO change address in buffer
 
-            BT_WARN("delta_ms=%d", delta_ms);
+            BT_INFO("delta_ms=%d", delta_ms);
         } else {
             rx->ctx.recv_dst = 0xC000; // group address = 0xC000
         }
-        BT_WARN("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
+        BT_INFO("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
     }
 
     //[5] = ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET, // Set MAM or BTM-R relay
@@ -1346,7 +1346,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     //}
     //BT_WARN("DUMP: model recv_op=%u", buf->data);
 
-    BT_WARN("TTL=%u", TTL(buf->data));
+    //BT_DBG("TTL=%u", TTL(buf->data));
 
     /* Update NID if RX or RX was with friend credentials */
     if (rx->friend_cred) {

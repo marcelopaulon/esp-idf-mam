@@ -176,7 +176,7 @@ static esp_err_t prov_complete(uint16_t node_index, const esp_ble_mesh_octet16_t
     ESP_LOG_BUFFER_HEX("uuid", uuid, ESP_BLE_MESH_OCTET16_LEN);
 
     store.server_addr = 0xC000; // Group address
-    mesh_example_info_store(); /* Store proper mesh example info */
+    //mesh_example_info_store(); /* Store proper mesh example info */
 
     sprintf(name, "%s%02x", "NODE-", node_index);
     err = esp_ble_mesh_provisioner_set_node_name(node_index, name);
@@ -239,7 +239,7 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
     switch (event) {
     case ESP_BLE_MESH_PROV_REGISTER_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROV_REGISTER_COMP_EVT, err_code %d", param->prov_register_comp.err_code);
-        mesh_example_info_restore(); /* Restore proper mesh example info */
+        //mesh_example_info_restore(); /* Restore proper mesh example info */
         break;
     case ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT, err_code %d", param->provisioner_prov_enable_comp.err_code);
@@ -559,17 +559,17 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
             hashmap_set(map, &(struct msgEntry){ .key=msgKey, .count=currentCount });
         }
 
-        ESP_LOGI(TAG, "Received publish message (%u) 0x%06x the string %s", currentCount, param->client_recv_publish_msg.opcode, msgKey);
+        printf("Received publish message (%u) 0x%06x the string %s\n", currentCount, param->client_recv_publish_msg.opcode, msgKey);
 
         if (strcmp("cmd-GRADYS-stats", msgKey) == 0) {
-            ESP_LOGI(TAG, "Mobile-Hub stats:");
-            ESP_LOGI(TAG, "Number of unique packets: %u", hashmap_count(map));
+            printf("Mobile-Hub stats:\n");
+            printf("Number of unique packets: %u\n", hashmap_count(map));
             duplicates = 0;
             hashmap_scan(map, stats_iter, NULL);
-            ESP_LOGI(TAG, "Number of duplicate packets: %u", duplicates);
+            printf("Number of duplicate packets: %u\n", duplicates);
         } else if (strcmp("cmd-GRADYS-reset", msgKey) == 0) {
             hashmap_clear(map, false);
-            ESP_LOGI(TAG, "Simulation was reset.");
+            printf("Simulation was reset.\n");
         }
         
         break;
