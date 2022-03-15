@@ -688,7 +688,6 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         return;
     }
 
-    printf("OpCode 0x%08x", opcode);
     BT_DBG("OpCode 0x%08x", opcode);
 
     bool sendToMobileHub = false;
@@ -704,7 +703,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         
         isDiscoveryMessage = true;
     } else if (opcode == 0x8230) {
-        printf("SEND TO MOBILE HUB APPLICATION LAYER\n");
+        BT_INFO("SEND TO MOBILE HUB APPLICATION LAYER\n");
         // This message should be relayed to the Mobile-Hub, so, we'll send it to
         // the net layer with a special address, 65277, that will indicate the net
         // layer to send the message towards the Mobile-Hub
@@ -728,7 +727,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             count = elem->vnd_model_count;
         }
 
-        printf("Debug - opcode=%u and dst=%u", opcode, rx->ctx.recv_dst);
+        //printf("Debug - opcode=%u and dst=%u", opcode, rx->ctx.recv_dst);
 
         op = find_op(models, count, opcode, &model);
         if (!op) {
