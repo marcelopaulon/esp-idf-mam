@@ -739,7 +739,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, uint32_t seq, uint8_t hdr,
 
     // Discovery packet app handling
     if (rx->ctx.recv_dst == 65278) {
-        sdu = bt_mesh_alloc_buf(CONFIG_BLE_MESH_RX_SDU_MAX - BLE_MESH_MIC_SHORT);
+        sdu = bt_mesh_alloc_buf(2);
         if (!sdu) {
             BT_ERR("%s, Out of memory", __func__);
             return -ENOMEM;

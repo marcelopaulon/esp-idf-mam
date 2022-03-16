@@ -220,7 +220,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
                 uint8_t *d2 = param->model_operation.msg;
                 char *msgKey = (char *)d2;
 
-                if (strcmp(msgKey, "cmd-GRADYS-counts") == 0) {
+                if (strcmp(msgKey, "-counts") == 0) {
                     printf("Number of packets sent=%u", messageSequence);
                     sendCount();
                 } else {

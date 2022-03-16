@@ -558,8 +558,8 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         uint8_t *d2 = param->client_recv_publish_msg.msg;
         char *msgKey = (char *)d2;
         
-        bool isStats = strcmp("cmd-GRADYS-stats", msgKey) == 0;
-        bool isReset = strcmp("cmd-GRADYS-reset", msgKey) == 0;
+        bool isStats = strcmp("-stats", msgKey) == 0;
+        bool isReset = strcmp("-reset", msgKey) == 0;
         bool isCountResp = startsWith("resp-count-", msgKey);
 
         uint8_t currentCount = 1;
