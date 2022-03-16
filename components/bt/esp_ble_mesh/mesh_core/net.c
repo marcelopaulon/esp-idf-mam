@@ -1294,32 +1294,24 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
     //BT_WARN("Relaying packet. TTL is now %u. ", TTL(buf->data));
 
-    for (int i = 0; i < buf->size; i++) {
+    //for (int i = 0; i < buf->size; i++) {
         //BT_WARN("Byte %d = 0x%04x ", i, buf->data[i]);
-    }
+    //}
 
     ///// TEST
 
     BT_DBG("MAM Relay recv_dst: %d", rx->ctx.recv_dst);
 
-    int err = 0;
+    //int err = 0;
 
-    uint32_t opcode;
+    //uint32_t opcode;
 
     //get_opcode(&buf->b, &opcode);
     //printf("OpCode dbg! 0x%04x (expected 0x%04x)", opcode, ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET);
 
     /// END TEST
 
-
-    if (rx->ctx.recv_dst == 65276) { // 65279
-        mamRelay = false;
-        BT_WARN("Set MAM relay type to %s", mamRelay ? "MAM" : "BTM-R");
-    } else if (rx->ctx.recv_dst == 65275) {
-        mamRelay = true;
-        BT_WARN("Set MAM relay type to %s", mamRelay ? "MAM" : "BTM-R");
-    }
-    else if (rx->ctx.recv_dst == 65277) { // Send to Mobile-Hub.
+    if (rx->ctx.recv_dst == 65277) { // Send to Mobile-Hub.
         BT_INFO("SEND TO MOBILE HUB NET LAYER");
 
         if (mamRelay) {
@@ -1334,6 +1326,12 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
             rx->ctx.recv_dst = 0xC000; // group address = 0xC000
         }
         BT_INFO("Started to relay (%s)!!! Hops=%u", (mamRelay ? "MAM" : "BTM-R"), rx->ctx.recv_ttl);
+    } else if (rx->ctx.recv_dst == 65276) { // 65279
+        mamRelay = false;
+        BT_WARN("Set MAM relay type to %s", mamRelay ? "MAM" : "BTM-R");
+    } else if (rx->ctx.recv_dst == 65275) {
+        mamRelay = true;
+        BT_WARN("Set MAM relay type to %s", mamRelay ? "MAM" : "BTM-R");
     }
 
     //[5] = ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET, // Set MAM or BTM-R relay

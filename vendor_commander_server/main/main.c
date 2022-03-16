@@ -398,13 +398,13 @@ static int setMAM(int argc, char **argv)
 {
     printf("%s, %s\n", __func__, "Setting MAM");
     
-    char mydata[1024] = "cmd-GRADYS-setMAM";
+    char mydata[1024] = "-setMAM";
 
     esp_ble_mesh_msg_ctx_t ctx = {0};
 
     ctx.net_idx = my_net_idx;
     ctx.app_idx = 0;
-    ctx.addr = 65275; // Send from Mobile-Hub (this node) to others, reserved address = 65275 //common.ctx.addr = 65275;
+    ctx.addr = 65275; // Send from Mobile-Hub or commander (this node) to others, reserved address = 65275 //common.ctx.addr = 65275;
     ctx.send_ttl = 3;
     ctx.send_rel = false;
     
@@ -422,13 +422,13 @@ static int setBTMR(int argc, char **argv)
 {
     printf("%s, %s\n", __func__, "Setting BTM-R");
 
-    char mydata[1024] = "cmd-GRADYS-setBTMR";
+    char mydata[1024] = "-setBTMR";
 
     esp_ble_mesh_msg_ctx_t ctx = {0};
 
     ctx.net_idx = my_net_idx;
     ctx.app_idx = 0;
-    ctx.addr = 65276; // Send from Mobile-Hub (this node) to others, reserved address = 65276 //common.ctx.addr = 65276;
+    ctx.addr = 65276; // Send from Mobile-Hub or commander (this node) to others, reserved address = 65276 //common.ctx.addr = 65276;
     ctx.send_ttl = 3;
     ctx.send_rel = false;
     
@@ -446,7 +446,7 @@ static int sendDiscovery(int argc, char **argv)
 {
     printf("%s, %s\n", __func__, "Sending discovery packet");
 
-    char mydata[1024] = "cmd-GRADYS-discovery";
+    char mydata[1024] = "-discovery";
 
     esp_ble_mesh_msg_ctx_t ctx = {0};
 
@@ -497,7 +497,7 @@ static int resetSimulation(int argc, char **argv)
 {
     printf("%s, %s net=0x%04x app=0x%04x\n", __func__, "Resetting all simulation nodes", my_net_idx, my_app_idx);
 
-    char mydata[1024] = "cmd-GRADYS-reset";
+    char mydata[1024] = "-reset";
 
     esp_ble_mesh_msg_ctx_t ctx = {0};
 
@@ -518,7 +518,7 @@ static int resetSimulation(int argc, char **argv)
 }
 
 static void requestCounts() {
-    char mydata[1024] = "cmd-GRADYS-counts";
+    char mydata[1024] = "-counts";
 
     esp_ble_mesh_msg_ctx_t ctx = {0};
 
@@ -544,7 +544,7 @@ static int statsSimulation(int argc, char **argv)
 
     printf("%s, %s\n", __func__, "Requesting stats from Mobile-Hub");
     
-    char mydata[1024] = "cmd-GRADYS-stats";
+    char mydata[1024] = "-stats";
 
     esp_ble_mesh_msg_ctx_t ctx = {0};
 
