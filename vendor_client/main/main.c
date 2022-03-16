@@ -513,6 +513,13 @@ bool stats_iter(const void *item, void *udata) {
     return true;
 }
 
+bool startsWith(const char *pre, const char *str)
+{
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? false : memcmp(pre, str, lenpre) == 0;
+}
+
 static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event,
                                              esp_ble_mesh_model_cb_param_t *param)
 {
@@ -530,7 +537,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         }
         break;
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
-        ESP_LOGI(TAG, "!!!!! ESP_BLE_MESH_MODEL_SEND_COMP_EVT !!!!! ABCDE");
+        ESP_LOGD(TAG, "!!!!! ESP_BLE_MESH_MODEL_SEND_COMP_EVT !!!!! ABCDE");
 
         if (param->model_send_comp.err_code) {
             if (param->model_send_comp.ctx->addr == 65278) {
@@ -544,32 +551,40 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         }
         
         start_time = esp_timer_get_time();
-        ESP_LOGI(TAG, "Send 0x%06x", param->model_send_comp.opcode);
+        ESP_LOGD(TAG, "Send 0x%06x", param->model_send_comp.opcode);
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT: {
-        ESP_LOGI(TAG, "!!!!! ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT !!!!! ABCDE");
+        ESP_LOGD(TAG, "!!!!! ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT !!!!! ABCDE");
         uint8_t *d2 = param->client_recv_publish_msg.msg;
         char *msgKey = (char *)d2;
+        
+        bool isStats = strcmp("cmd-GRADYS-stats", msgKey) == 0;
+        bool isReset = strcmp("cmd-GRADYS-reset", msgKey) == 0;
+        bool isCountResp = startsWith("resp-count-", msgKey);
+
         uint8_t currentCount = 1;
         struct msgEntry *msgEntry = hashmap_get(map, &(struct msgEntry){ .key=msgKey });
-        if (msgEntry != NULL) {
-            currentCount = msgEntry->count + 1;
-            msgEntry->count = currentCount;
-        } else {
-            hashmap_set(map, &(struct msgEntry){ .key=msgKey, .count=currentCount });
-        }
-
-        printf("Received publish message (%u) 0x%06x the string %s\n", currentCount, param->client_recv_publish_msg.opcode, msgKey);
-
-        if (strcmp("cmd-GRADYS-stats", msgKey) == 0) {
+        
+        if (isStats) {
             printf("Mobile-Hub stats:\n");
             printf("Number of unique packets: %u\n", hashmap_count(map));
             duplicates = 0;
             hashmap_scan(map, stats_iter, NULL);
             printf("Number of duplicate packets: %u\n", duplicates);
-        } else if (strcmp("cmd-GRADYS-reset", msgKey) == 0) {
+        } else if (isReset) {
             hashmap_clear(map, false);
             printf("Simulation was reset.\n");
+        } else if (isCountResp) {
+            printf("Count response received from %u: %s.\n", param->client_recv_publish_msg.ctx->addr, msgKey);
+        } else {
+            if (msgEntry != NULL) {
+                currentCount = msgEntry->count + 1;
+                msgEntry->count = currentCount;
+            } else {
+                hashmap_set(map, &(struct msgEntry){ .key=msgKey, .count=currentCount });
+            }
+
+            printf("Received publish message (%u) 0x%06x the string %s\n", currentCount, param->client_recv_publish_msg.opcode, msgKey);
         }
         
         break;

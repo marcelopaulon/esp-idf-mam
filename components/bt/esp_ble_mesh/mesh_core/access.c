@@ -694,16 +694,16 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     bool isDiscoveryMessage = false;
 
     if (rx->ctx.recv_dst == 65279) {
-        printf("ERROR! SHOULD NOT HAPPEN - SWITCH MAM RELAY APPLICATION LAYER\n"); // This should never happen
+        BT_ERR("ERROR! SHOULD NOT HAPPEN - SWITCH MAM RELAY APPLICATION LAYER\n"); // This should never happen
     } else if (rx->ctx.recv_dst == 65278) {
-        printf("DISCOVERY MESSAGE APPLICATION LAYER from %u\n", rx->ctx.addr);
+        BT_DBG("DISCOVERY MESSAGE APPLICATION LAYER from %u\n", rx->ctx.addr);
         opcode = 12583653;
         rx->ctx.addr = 65278;
         rx->ctx.recv_dst = 49152;
         
         isDiscoveryMessage = true;
     } else if (opcode == 0x8230) {
-        BT_INFO("SEND TO MOBILE HUB APPLICATION LAYER\n");
+        BT_DBG("SEND TO MOBILE HUB APPLICATION LAYER\n");
         // This message should be relayed to the Mobile-Hub, so, we'll send it to
         // the net layer with a special address, 65277, that will indicate the net
         // layer to send the message towards the Mobile-Hub

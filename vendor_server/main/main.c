@@ -170,41 +170,64 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
     }
 }
 
+static void sendCount() {
+    esp_ble_mesh_msg_ctx_t ctx = {0};
+
+    ctx.net_idx = my_net_idx;
+    ctx.app_idx = 0;
+    ctx.addr = 0xC000; // Send from sensor (this node) to others, group address = 0xC000
+    ctx.send_ttl = 3;
+    ctx.send_rel = false;
+    
+    char mydata[64] = "";
+    sprintf(mydata, "resp-count-%u", messageSequence);
+    
+    esp_err_t err = esp_ble_mesh_server_model_send_msg(&vnd_models[0],
+            &ctx, ESP_BLE_MESH_VND_MODEL_OP_STATUS,
+            strlen(mydata)+1, (uint8_t *)mydata); // Sends data towards the Mobile-Hub
+    if (err) {
+        ESP_LOGE(TAG, "Failed to send message 0x%06x - reason=%d", ESP_BLE_MESH_VND_MODEL_OP_STATUS, err);
+    }
+}
+
 static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event,
                                              esp_ble_mesh_model_cb_param_t *param)
 {
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_SEND) {
+            esp_ble_mesh_msg_ctx_t ctx = {0};
+
+            ctx.net_idx = my_net_idx;
+            ctx.app_idx = 0;
+            ctx.addr = 0xC000; // Send from Mobile-Hub (this node) to others, group address = 0xC000
+            ctx.send_ttl = 3;
+            ctx.send_rel = false;
+
             if (param->model_operation.ctx->addr == 65278) {
                 ESP_LOGD(TAG, "KAKAKAKAKA APPLICATION SENSOR RECEIVED a Discovery Message successfully!!");
-
-                param->model_operation.ctx->net_idx = my_net_idx;
-                param->model_operation.ctx->app_idx = 0;
-                param->model_operation.ctx->addr = 65277; // Send to Mobile-Hub!
-                param->model_operation.ctx->send_ttl = 3;
-                param->model_operation.ctx->send_rel = false;
+                ctx.addr = 65277; // Send to Mobile-Hub only!
+                char mydata[128] = "";
+                sprintf(mydata, "GRADYS-n%d-r%d-m%u", nodeId, sessionReboots, messageSequence++);
+                
+                esp_err_t err = esp_ble_mesh_server_model_send_msg(&vnd_models[0],
+                        &ctx, ESP_BLE_MESH_VND_MODEL_OP_STATUS,
+                        strlen(mydata)+1, (uint8_t *)mydata); // Sends data towards the Mobile-Hub
+                if (err) {
+                    ESP_LOGE(TAG, "Failed to send message 0x%06x - reason=%d", ESP_BLE_MESH_VND_MODEL_OP_STATUS, err);
+                }
             } else {
                 uint8_t *d2 = param->model_operation.msg;
                 char *msgKey = (char *)d2;
 
                 if (strcmp(msgKey, "cmd-GRADYS-counts") == 0) {
                     printf("Number of packets sent=%u", messageSequence);
+                    sendCount();
                 } else {
                     ESP_LOGE(TAG, "Not a discovery message - opcode 0x%06x from %u - %s", param->model_operation.opcode, param->model_operation.ctx->addr, msgKey);
                     //uint16_t tid = *(uint16_t *)param->model_operation.msg;
                     //ESP_LOGI(TAG, "Recv 0x%06x, tid 0x%04x", param->model_operation.opcode, tid);
                 }
-            }           
-
-            char mydata[1024] = "";
-            sprintf(mydata, "GRADYS-n%d-r%d-m%u", nodeId, sessionReboots, messageSequence++);
-            
-            esp_err_t err = esp_ble_mesh_server_model_send_msg(&vnd_models[0],
-                    param->model_operation.ctx, ESP_BLE_MESH_VND_MODEL_OP_STATUS,
-                    strlen(mydata)+1, (uint8_t *)mydata); // Sends data towards the Mobile-Hub
-            if (err) {
-                ESP_LOGE(TAG, "Failed to send message 0x%06x - reason=%d", ESP_BLE_MESH_VND_MODEL_OP_STATUS, err);
             }
         }
         break;
