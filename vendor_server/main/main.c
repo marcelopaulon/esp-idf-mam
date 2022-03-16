@@ -180,7 +180,7 @@ static void sendCount() {
     ctx.send_rel = false;
     
     char mydata[64] = "";
-    sprintf(mydata, "resp-count-%u", messageSequence);
+    sprintf(mydata, "rc-%u", messageSequence);
     
     esp_err_t err = esp_ble_mesh_server_model_send_msg(&vnd_models[0],
             &ctx, ESP_BLE_MESH_VND_MODEL_OP_STATUS,

@@ -560,7 +560,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         
         bool isStats = strcmp("-stats", msgKey) == 0;
         bool isReset = strcmp("-reset", msgKey) == 0;
-        bool isCountResp = startsWith("resp-count-", msgKey);
+        bool isCountResp = startsWith("rc-", msgKey);
 
         uint8_t currentCount = 1;
         struct msgEntry *msgEntry = hashmap_get(map, &(struct msgEntry){ .key=msgKey });
